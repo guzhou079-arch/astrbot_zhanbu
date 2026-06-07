@@ -72,9 +72,9 @@ class DivinationPlugin(Star):
             result = meihua_by_numbers(number1, number2, question)
         else:
             result = meihua_random(question)
-        yield event.plain_result(result.format_text())
         interpretation = await self._interpret_meihua(event, result)
-        yield event.plain_result(f"\n🌟 解卦：\n{interpretation}")
+        combined = result.format_text() + f"\n\n🌟 解卦：\n{interpretation}"
+        yield event.plain_result(combined)
 
     @filter.llm_tool(name="liuyao_divination")
     async def tool_liuyao(self, event: AstrMessageEvent, question: str) -> MessageEventResult:
@@ -84,9 +84,9 @@ class DivinationPlugin(Star):
             question(string): 用户想要占卜的问题，如果用户没有明确说明则填"综合运势"
         '''
         pan = liuyao_paipan(question)
-        yield event.plain_result(pan.format_text())
         interpretation = await self._interpret_liuyao(event, pan)
-        yield event.plain_result(f"\n🌟 断卦：\n{interpretation}")
+        combined = pan.format_text() + f"\n\n🌟 断卦：\n{interpretation}"
+        yield event.plain_result(combined)
 
     @filter.llm_tool(name="time_divination")
     async def tool_time_gua(self, event: AstrMessageEvent, question: str) -> MessageEventResult:
@@ -96,9 +96,9 @@ class DivinationPlugin(Star):
             question(string): 用户想要占卜的问题，如果用户没有明确说明则填"综合运势"
         '''
         result = meihua_by_time(question)
-        yield event.plain_result(result.format_text())
         interpretation = await self._interpret_meihua(event, result)
-        yield event.plain_result(f"\n🌟 解卦：\n{interpretation}")
+        combined = result.format_text() + f"\n\n🌟 解卦：\n{interpretation}"
+        yield event.plain_result(combined)
 
     # ==========================================
     #  辅助: 调用 LLM 解读
