@@ -330,6 +330,8 @@ class LiuYaoPaiPan:
     """完整六爻排盘"""
     def __init__(self):
         self.question: str = ""
+        self.method: str = "铜钱摇卦"
+        self.extra_info: str = ""
         self.time_str: str = ""
         self.day_gan: str = ""
         self.day_zhi: str = ""
@@ -357,9 +359,11 @@ class LiuYaoPaiPan:
     def format_text(self) -> str:
         """格式化排盘文本 (QQ友好)"""
         lines = []
-        lines.append(f"🔮【六爻·铜钱摇卦】")
+        lines.append(f"🔮【六爻·{self.method}】")
         if self.question:
             lines.append(f"📜 所问：{self.question}")
+        if self.extra_info:
+            lines.append(f"📝 {self.extra_info}")
         lines.append(f"⏰ {self.time_str}")
         lines.append(f"📅 月建：{self.month_gan}{self.month_zhi}月 | 日辰：{self.day_gan}{self.day_zhi}日 | 旬空：{self.xunkong[0]}{self.xunkong[1]}")
         lines.append("")
@@ -417,18 +421,13 @@ class LiuYaoPaiPan:
 
 
 # ============================================================
-#  核心: 完整六爻排盘
+#  核心: 装卦公共逻辑
 # ============================================================
 
-def liuyao_paipan(question: str = "") -> LiuYaoPaiPan:
-    """完整六爻排盘"""
-    random.seed(time.time_ns())
+def _fill_paipan(pan: LiuYaoPaiPan, ben_lines: list, dong_positions: list):
+    """公共装卦逻辑: 纳甲·八宫·世应·六亲·六神·旺衰·变卦"""
+    today = date.today()
     now = datetime.now()
-    today = now.date()
-
-    pan = LiuYaoPaiPan()
-    pan.question = question
-    pan.time_str = f"起卦时间：{now.strftime('%Y年%m月%d日 %H:%M')}"
 
     # ---- 日干支 ----
     dtg_idx, ddz_idx, dtg, ddz = get_day_ganzhi(today)
@@ -442,20 +441,15 @@ def liuyao_paipan(question: str = "") -> LiuYaoPaiPan:
     # ---- 旬空 ----
     pan.xunkong = get_xunkong(dtg_idx, ddz_idx)
 
-    # ---- 摇卦 (三枚铜钱×6次) ----
-    coin_vals = []
-    for _ in range(6):
-        coins = [random.choice([2, 3]) for _ in range(3)]
-        coin_vals.append(sum(coins))
+    if not pan.time_str:
+        pan.time_str = f"起卦时间：{now.strftime('%Y年%m月%d日 %H:%M')}"
 
     # ---- 本卦 ----
-    ben_lines = [1 if v in (7, 9) else 0 for v in coin_vals]
     lo_bin, up_bin = tuple(ben_lines[0:3]), tuple(ben_lines[3:6])
     pan.lower, pan.upper = BIN_TO_GUA[lo_bin], BIN_TO_GUA[up_bin]
     pan.ben_gua_name = gua_name(pan.upper, pan.lower)
 
-    # ---- 动爻与变卦 ----
-    dong_positions = [i for i, v in enumerate(coin_vals) if v in (6, 9)]
+    # ---- 变卦 ----
     bian_lines = ben_lines.copy()
     for dp in dong_positions:
         bian_lines[dp] = 1 - bian_lines[dp]
@@ -486,48 +480,35 @@ def liuyao_paipan(question: str = "") -> LiuYaoPaiPan:
     for i in range(6):
         y = YaoLine()
         y.pos = i + 1
-        y.coin_val = coin_vals[i]
         y.yin_yang = ben_lines[i]
-        y.is_dong = coin_vals[i] in (6, 9)
+        y.is_dong = i in dong_positions
 
-        # 纳甲天干地支
         if i < 3:
-            y.tiangan = lower_najia[0]  # 内卦天干
-            y.dizhi = lower_najia[2][i]  # 内卦地支
+            y.tiangan = lower_najia[0]
+            y.dizhi = lower_najia[2][i]
         else:
-            y.tiangan = upper_najia[1]  # 外卦天干
-            y.dizhi = upper_najia[3][i - 3]  # 外卦地支
+            y.tiangan = upper_najia[1]
+            y.dizhi = upper_najia[3][i - 3]
 
         y.wuxing = DIZHI_WUXING[y.dizhi]
-
-        # 六亲
         y.liuqin = liuqin(pan.palace_wx, y.wuxing)
-
-        # 六神
         y.liushen = liushen_list[i]
 
-        # 世应
         if y.pos == shi_pos:
             y.shi_ying = "世"
         elif y.pos == ying_pos:
             y.shi_ying = "应"
 
-        # 旬空
         y.is_kong = y.dizhi in pan.xunkong
-
-        # 旺衰
         y.wangshuai = yao_wangshuai(y.wuxing, pan.month_wx)
         y.ri_rel = yao_ri_relation(y.wuxing, pan.day_wx)
 
-        # 变爻纳甲 (动爻变后的地支)
         if y.is_dong and pan.has_bian:
             if i < 3:
-                bian_gua_num = pan.bian_lower
-                bian_najia = NAJIA[bian_gua_num]
+                bian_najia = NAJIA[pan.bian_lower]
                 y.bian_dizhi = bian_najia[2][i]
             else:
-                bian_gua_num = pan.bian_upper
-                bian_najia = NAJIA[bian_gua_num]
+                bian_najia = NAJIA[pan.bian_upper]
                 y.bian_dizhi = bian_najia[3][i - 3]
             y.bian_wuxing = DIZHI_WUXING[y.bian_dizhi]
             y.bian_liuqin = liuqin(pan.palace_wx, y.bian_wuxing)
@@ -535,10 +516,9 @@ def liuyao_paipan(question: str = "") -> LiuYaoPaiPan:
         pan.yaos.append(y)
 
     # ---- 用神 ----
-    ys = select_yongshen(question)
+    ys = select_yongshen(pan.question)
     pan.yongshen = ys
     if ys != "世爻":
-        # 找到用神所在爻
         found = []
         for y in pan.yaos:
             if y.liuqin == ys:
@@ -554,3 +534,56 @@ def liuyao_paipan(question: str = "") -> LiuYaoPaiPan:
             pan.yongshen_yao = "本卦不现，需查伏神"
 
     return pan
+
+
+# ============================================================
+#  入口1: 铜钱摇卦
+# ============================================================
+
+def liuyao_paipan(question: str = "") -> LiuYaoPaiPan:
+    """铜钱摇卦法"""
+    random.seed(time.time_ns())
+    pan = LiuYaoPaiPan()
+    pan.question = question
+    pan.method = "铜钱摇卦"
+
+    coin_vals = []
+    for _ in range(6):
+        coins = [random.choice([2, 3]) for _ in range(3)]
+        coin_vals.append(sum(coins))
+
+    ben_lines = [1 if v in (7, 9) else 0 for v in coin_vals]
+    dong_positions = [i for i, v in enumerate(coin_vals) if v in (6, 9)]
+
+    return _fill_paipan(pan, ben_lines, dong_positions)
+
+
+# ============================================================
+#  入口2: 数字起卦 (六爻数字卦)
+# ============================================================
+
+def liuyao_number(num1: int, num2: int, question: str = "") -> LiuYaoPaiPan:
+    """六爻数字卦: 上卦数/8计上卦, 下卦数/8计下卦, 两数和/6计动爻"""
+    pan = LiuYaoPaiPan()
+    pan.question = question
+    pan.method = "数字起卦"
+    pan.extra_info = f"报数：{num1}, {num2}"
+
+    # 上卦
+    up_r = num1 % 8
+    up_num = up_r if up_r != 0 else 8
+    # 下卦
+    lo_r = num2 % 8
+    lo_num = lo_r if lo_r != 0 else 8
+    # 动爻
+    dy_r = (num1 + num2) % 6
+    dong_yao = dy_r if dy_r != 0 else 6  # 1-6
+
+    # 根据先天八卦数构建六爻
+    up_bin = list(BAGUA_BIN[up_num])
+    lo_bin = list(BAGUA_BIN[lo_num])
+    ben_lines = lo_bin + up_bin  # 6爻从下到上
+
+    dong_positions = [dong_yao - 1]  # 转为 0-indexed
+
+    return _fill_paipan(pan, ben_lines, dong_positions)

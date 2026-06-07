@@ -16,7 +16,7 @@ from .divination_core import (
     meihua_random,
     DivinationResult,
 )
-from .liuyao_engine import liuyao_paipan, LiuYaoPaiPan
+from .liuyao_engine import liuyao_paipan, liuyao_number, LiuYaoPaiPan
 
 # 梅花易数解读提示
 MEIHUA_INTERPRET_PROMPT = """你现在是一位精通周易占卜的角色，同时保持自己原本的人设和说话风格来解卦。
@@ -100,6 +100,20 @@ class DivinationPlugin(Star):
         combined = result.format_text() + f"\n\n🌟 解卦：\n{interpretation}"
         yield event.plain_result(combined)
 
+    @filter.llm_tool(name="liuyao_number_divination")
+    async def tool_liuyao_number(self, event: AstrMessageEvent, question: str, number1: int, number2: int) -> MessageEventResult:
+        '''六爻数字起卦。当用户提供两个数字并要求用六爻方式占卜时调用。上卦数除以8取余得上卦，下卦数除以8取余得下卦，两数之和除以6取余得动爻。
+
+        Args:
+            question(string): 用户想要占卜的问题，如果用户没有明确说明则填"综合运势"
+            number1(number): 用户提供的第一个数字（上卦数）
+            number2(number): 用户提供的第二个数字（下卦数）
+        '''
+        pan = liuyao_number(number1, number2, question)
+        interpretation = await self._interpret_liuyao(event, pan)
+        combined = pan.format_text() + f"\n\n🌟 断卦：\n{interpretation}"
+        yield event.plain_result(combined)
+
     # ==========================================
     #  辅助: 调用 LLM 解读
     # ==========================================
@@ -170,6 +184,21 @@ class DivinationPlugin(Star):
         yield event.plain_result(pan.format_text())
         interpretation = await self._interpret_liuyao(event, pan)
         yield event.plain_result(f"\n🌟 断卦：\n{interpretation}")
+
+    @filter.command("数字卦")
+    async def cmd_number_gua(self, event: AstrMessageEvent):
+        '''数字卦 数字1 数字2 [问题] - 六爻数字起卦'''
+        text = event.message_str.strip()
+        num_match = re.match(r'(\d+)\s+(\d+)\s*(.*)', text)
+        if num_match:
+            n1, n2 = int(num_match.group(1)), int(num_match.group(2))
+            question = num_match.group(3).strip()
+            pan = liuyao_number(n1, n2, question)
+            yield event.plain_result(pan.format_text())
+            interpretation = await self._interpret_liuyao(event, pan)
+            yield event.plain_result(f"\n🌟 断卦：\n{interpretation}")
+        else:
+            yield event.plain_result("📌 用法：/数字卦 数字1 数字2 [问题]\n例如：/数字卦 23 47 今天运势如何")
 
     # ==========================================
     #  关键词 regex 触发
