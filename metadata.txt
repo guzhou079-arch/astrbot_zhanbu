@@ -1,0 +1,5 @@
+name: astrbot_plugin_divination
+desc: 周易占卜插件 - 梅花易数 & 六爻，支持时间/报数/心念起卦和铜钱摇卦，LLM人设解读
+author: guzhou079-arch
+repo: https://github.com/guzhou079-arch/astrbot_zhanbu
+version: 1.1.0
