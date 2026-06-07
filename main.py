@@ -73,7 +73,6 @@ class DivinationPlugin(Star):
         else:
             result = meihua_random(question)
         text = result.format_text()
-        text += "\n\n【请你现在立刻用自己的人设风格解读以上卦象，不要只展示不解读。】"
         yield event.plain_result(text)
 
     @filter.llm_tool(name="liuyao_divination")
@@ -85,7 +84,6 @@ class DivinationPlugin(Star):
         '''
         pan = liuyao_paipan(question)
         text = pan.format_text()
-        text += "\n\n【请你现在立刻根据以上完整排盘信息进行六爻断卦。重点分析：1.用神旺衰 2.世爻状态 3.动爻影响 4.六神辅判。用自己的人设风格解读，不要只展示不解读。】"
         yield event.plain_result(text)
 
     @filter.llm_tool(name="time_divination")
@@ -97,7 +95,6 @@ class DivinationPlugin(Star):
         '''
         result = meihua_by_time(question)
         text = result.format_text()
-        text += "\n\n【请你现在立刻用自己的人设风格解读以上卦象，不要只展示不解读。】"
         yield event.plain_result(text)
 
     # ==========================================

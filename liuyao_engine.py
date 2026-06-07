@@ -204,21 +204,6 @@ WUXING_LIST = ["金", "木", "水", "火", "土"]
 SHENG_CYCLE = {"木": "水", "火": "木", "土": "火", "金": "土", "水": "金"}  # X生于Y → SHENG[X]=Y
 KE_CYCLE = {"木": "金", "火": "水", "土": "木", "金": "火", "水": "土"}    # X被Y克 → KE[X]=Y
 
-def get_liuqin(palace_wx: str, yao_wx: str) -> str:
-    """根据宫五行和爻五行推导六亲"""
-    if yao_wx == palace_wx:
-        return "兄弟"
-    if SHENG_CYCLE.get(palace_wx) == yao_wx:
-        return "父母"  # 生我者
-    if SHENG_CYCLE.get(yao_wx) == palace_wx:
-        return "子孙"  # 我生者 (palace生yao → yao is 子孙? No...)
-    # 重新理清:
-    # 生我者为父母: 谁生palace_wx? → SHENG_CYCLE[palace_wx] 生 palace_wx
-    # 我生者为子孙: palace_wx 生谁? 
-    # 克我者为官鬼: 谁克palace_wx? → KE_CYCLE[palace_wx]
-    # 我克者为妻财: palace_wx 克谁?
-    pass
-
 # 重新用更清晰的方式
 _WX_SHENG = {"金": "水", "水": "木", "木": "火", "火": "土", "土": "金"}  # A生B
 _WX_KE = {"金": "木", "木": "土", "土": "水", "水": "火", "火": "金"}      # A克B
@@ -370,64 +355,60 @@ class LiuYaoPaiPan:
         self.yongshen_yao: str = ""  # 用神所在爻位描述
 
     def format_text(self) -> str:
-        """格式化排盘文本"""
+        """格式化排盘文本 (QQ友好)"""
         lines = []
-        lines.append(f"🔮 【六爻·铜钱摇卦】")
+        lines.append(f"🔮【六爻·铜钱摇卦】")
         if self.question:
             lines.append(f"📜 所问：{self.question}")
         lines.append(f"⏰ {self.time_str}")
-        lines.append(f"📅 月建：{self.month_gan}{self.month_zhi}月  "
-                      f"日辰：{self.day_gan}{self.day_zhi}日  "
-                      f"旬空：{self.xunkong[0]}{self.xunkong[1]}")
+        lines.append(f"📅 月建：{self.month_gan}{self.month_zhi}月 | 日辰：{self.day_gan}{self.day_zhi}日 | 旬空：{self.xunkong[0]}{self.xunkong[1]}")
         lines.append("")
 
-        bian_str = f"  →  变卦：{self.bian_gua_name}" if self.has_bian else ""
-        lines.append(f"📋 {self.palace_name}宫：{self.ben_gua_name}（{self.shi_name}）{bian_str}")
+        bian_str = f" → {self.bian_gua_name}" if self.has_bian else ""
+        lines.append(f"📋 {self.palace_name}宫 | {self.ben_gua_name}（{self.shi_name}）{bian_str}")
         lines.append("")
 
-        # 表头
-        if self.has_bian:
-            lines.append("六神  本  卦                      变  卦")
-            lines.append("─────────────────────────────")
-        else:
-            lines.append("六神  本  卦")
-            lines.append("───────────────────")
+        # 爻位名称
+        yao_pos_names = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"]
 
         # 从上爻到初爻显示
         for i in range(5, -1, -1):
             y = self.yaos[i]
-            # 爻象符号
-            yao_sym = "▅▅▅" if y.yin_yang == 1 else "▅ ▅"
-            dong_mark = "○" if (y.is_dong and y.yin_yang == 1) else ("×" if y.is_dong else " ")
 
-            # 世应标记
-            sa = f" {y.shi_ying}" if y.shi_ying else "  "
+            # 爻象: 用文字更清晰
+            if y.yin_yang == 1:
+                yao_sym = "——"
+                dong_mark = "○" if y.is_dong else ""
+            else:
+                yao_sym = "— —"
+                dong_mark = "×" if y.is_dong else ""
 
-            # 旬空标记
-            kong = "空" if y.is_kong else "  "
+            # 世应
+            sa = y.shi_ying if y.shi_ying else ""
 
-            # 主线
-            main = f"{y.liushen:　<3} {yao_sym}{dong_mark} {y.tiangan}{y.dizhi}{y.wuxing} {y.liuqin}{sa} {kong}"
+            # 旬空
+            kong = " 空" if y.is_kong else ""
+
+            # 主线: 六神 | 爻象 | 纳甲 | 六亲 | 世应 | 旬空
+            main = f"{y.liushen} {yao_sym}{dong_mark} {y.tiangan}{y.dizhi}{y.wuxing} {y.liuqin} {sa}{kong}"
 
             # 变卦部分
             if self.has_bian and y.is_dong:
-                bian_yy = 1 - y.yin_yang  # 动则变
-                bian_sym = "▅▅▅" if bian_yy == 1 else "▅ ▅"
-                bian_part = f"→ {bian_sym} {y.bian_dizhi}{y.bian_wuxing} {y.bian_liuqin}"
-            elif self.has_bian:
-                bian_part = ""
-            else:
-                bian_part = ""
+                bian_yy = 1 - y.yin_yang
+                bian_sym = "——" if bian_yy == 1 else "— —"
+                main += f"  → {bian_sym} {y.bian_dizhi}{y.bian_wuxing} {y.bian_liuqin}"
 
-            lines.append(f"{main}  {bian_part}")
+            lines.append(main)
 
         lines.append("")
 
-        # 用神
+        # 用神信息
         if self.yongshen and self.yongshen != "世爻":
             lines.append(f"🎯 用神：{self.yongshen}")
             if self.yongshen_yao:
-                lines.append(f"   {self.yongshen_yao}")
+                lines.append(f"  {self.yongshen_yao}")
+        elif self.yongshen == "世爻":
+            lines.append(f"🎯 用神：世爻（综合运势）")
 
         return "\n".join(lines)
 
