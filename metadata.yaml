@@ -1,0 +1,5 @@
+name: astrbot_zhanbu
+desc: 周易占卜插件 - 梅花易数 & 六爻完整排盘，LLM人设解读
+author: guzhou079-arch
+repo: https://github.com/guzhou079-arch/astrbot_zhanbu
+version: 2.0.0
