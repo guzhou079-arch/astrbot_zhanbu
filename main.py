@@ -61,7 +61,7 @@ class DivinationPlugin(Star):
 
     @filter.llm_tool(name="meihua_divination")
     async def tool_meihua(self, event: AstrMessageEvent, question: str, number1: int = 0, number2: int = 0) -> MessageEventResult:
-        '''梅花易数占卜起卦。当用户想要占卜、算卦、算命、测运势、问吉凶时调用此工具。重要：工具会返回卦象数据，你收到后必须在回复中用自己的人设风格进行详细解读（200-400字），包括本卦变卦含义、体用关系分析、对所问之事的建议，不能只展示卦象不解读，解读是你的核心任务。最后提醒是娱乐占卜。
+        '''梅花易数占卜起卦。当用户想要占卜、算卦、算命、测运势、问吉凶时调用此工具。
 
         Args:
             question(string): 用户想要占卜的问题，如果用户没有明确说明则填"综合运势"
@@ -72,30 +72,33 @@ class DivinationPlugin(Star):
             result = meihua_by_numbers(number1, number2, question)
         else:
             result = meihua_random(question)
-        text = result.format_text()
-        yield event.plain_result(text)
+        yield event.plain_result(result.format_text())
+        interpretation = await self._interpret_meihua(event, result)
+        yield event.plain_result(f"\n🌟 解卦：\n{interpretation}")
 
     @filter.llm_tool(name="liuyao_divination")
     async def tool_liuyao(self, event: AstrMessageEvent, question: str) -> MessageEventResult:
-        '''六爻铜钱摇卦占卜（完整排盘：纳甲六亲六神世应月建日辰旬空用神）。当用户明确要求用六爻、铜钱、摇卦方式占卜时调用。重要：工具会返回排盘数据，你收到后必须在回复中根据用神旺衰、世爻强弱、动爻生克、六神等进行完整断卦解读（300-500字），不能只展示排盘不断卦，断卦是你的核心任务。用自己的人设风格，最后提醒是娱乐占卜。
+        '''六爻铜钱摇卦占卜（完整排盘）。当用户明确要求用六爻、铜钱、摇卦方式占卜时调用。
 
         Args:
             question(string): 用户想要占卜的问题，如果用户没有明确说明则填"综合运势"
         '''
         pan = liuyao_paipan(question)
-        text = pan.format_text()
-        yield event.plain_result(text)
+        yield event.plain_result(pan.format_text())
+        interpretation = await self._interpret_liuyao(event, pan)
+        yield event.plain_result(f"\n🌟 断卦：\n{interpretation}")
 
     @filter.llm_tool(name="time_divination")
     async def tool_time_gua(self, event: AstrMessageEvent, question: str) -> MessageEventResult:
-        '''按当前时间起卦（梅花易数时间起卦法）。当用户要求按时间、时辰起卦时调用。调用后请用自己的人设风格解读。
+        '''按当前时间起卦（梅花易数时间起卦法）。当用户要求按时间、时辰起卦时调用。
 
         Args:
             question(string): 用户想要占卜的问题，如果用户没有明确说明则填"综合运势"
         '''
         result = meihua_by_time(question)
-        text = result.format_text()
-        yield event.plain_result(text)
+        yield event.plain_result(result.format_text())
+        interpretation = await self._interpret_meihua(event, result)
+        yield event.plain_result(f"\n🌟 解卦：\n{interpretation}")
 
     # ==========================================
     #  辅助: 调用 LLM 解读
