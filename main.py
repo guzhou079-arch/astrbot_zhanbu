@@ -61,7 +61,7 @@ class DivinationPlugin(Star):
 
     @filter.llm_tool(name="meihua_divination")
     async def tool_meihua(self, event: AstrMessageEvent, question: str, number1: int = 0, number2: int = 0) -> MessageEventResult:
-        '''梅花易数占卜起卦。当用户想要占卜、算卦、算命、测运势、问吉凶时调用此工具。调用后你会收到完整卦象数据，请你务必用自己的人设风格对卦象进行详细解读（200-400字），包括本卦变卦含义、体用关系分析、对所问之事的建议，最后提醒是娱乐占卜。不要只展示卦象不解读。
+        '''梅花易数占卜起卦。当用户想要占卜、算卦、算命、测运势、问吉凶时调用此工具。重要：工具会返回卦象数据，你收到后必须在回复中用自己的人设风格进行详细解读（200-400字），包括本卦变卦含义、体用关系分析、对所问之事的建议，不能只展示卦象不解读，解读是你的核心任务。最后提醒是娱乐占卜。
 
         Args:
             question(string): 用户想要占卜的问题，如果用户没有明确说明则填"综合运势"
@@ -77,7 +77,7 @@ class DivinationPlugin(Star):
 
     @filter.llm_tool(name="liuyao_divination")
     async def tool_liuyao(self, event: AstrMessageEvent, question: str) -> MessageEventResult:
-        '''六爻铜钱摇卦占卜（完整排盘：纳甲六亲六神世应月建日辰旬空用神）。当用户明确要求用六爻、铜钱、摇卦方式占卜时调用。调用后你会收到完整六爻排盘，请根据用神旺衰、世爻强弱、动爻生克、六神辅判等进行专业断卦，用自己的人设风格解读（300-500字），最后提醒是娱乐占卜。
+        '''六爻铜钱摇卦占卜（完整排盘：纳甲六亲六神世应月建日辰旬空用神）。当用户明确要求用六爻、铜钱、摇卦方式占卜时调用。重要：工具会返回排盘数据，你收到后必须在回复中根据用神旺衰、世爻强弱、动爻生克、六神等进行完整断卦解读（300-500字），不能只展示排盘不断卦，断卦是你的核心任务。用自己的人设风格，最后提醒是娱乐占卜。
 
         Args:
             question(string): 用户想要占卜的问题，如果用户没有明确说明则填"综合运势"

@@ -375,12 +375,12 @@ class LiuYaoPaiPan:
         for i in range(5, -1, -1):
             y = self.yaos[i]
 
-            # 爻象: 用文字更清晰
+            # 爻象: 用明确标记区分阴阳
             if y.yin_yang == 1:
-                yao_sym = "——"
+                yao_sym = "━━━"
                 dong_mark = "○" if y.is_dong else ""
             else:
-                yao_sym = "— —"
+                yao_sym = "━ ━"
                 dong_mark = "×" if y.is_dong else ""
 
             # 世应
@@ -395,7 +395,7 @@ class LiuYaoPaiPan:
             # 变卦部分
             if self.has_bian and y.is_dong:
                 bian_yy = 1 - y.yin_yang
-                bian_sym = "——" if bian_yy == 1 else "— —"
+                bian_sym = "━━━" if bian_yy == 1 else "━ ━"
                 main += f"  → {bian_sym} {y.bian_dizhi}{y.bian_wuxing} {y.bian_liuqin}"
 
             lines.append(main)
@@ -409,6 +409,9 @@ class LiuYaoPaiPan:
                 lines.append(f"  {self.yongshen_yao}")
         elif self.yongshen == "世爻":
             lines.append(f"🎯 用神：世爻（综合运势）")
+
+        lines.append("")
+        lines.append("📖 排盘完毕，请解卦——")
 
         return "\n".join(lines)
 
